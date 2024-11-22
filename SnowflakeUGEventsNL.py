@@ -29,13 +29,23 @@ if "events" not in st.session_state:
 st.subheader("Planned Events")
 st.dataframe(st.session_state.events)
 
+# Initialize form state variables in session_state
+if "subject" not in st.session_state:
+    st.session_state["subject"] = ""
+if "short_description" not in st.session_state:
+    st.session_state["short_description"] = ""
+if "presentor" not in st.session_state:
+    st.session_state["presentor"] = ""
+if "period" not in st.session_state:
+    st.session_state["period"] = ""
+
 # Add a new event form
 st.subheader("Add a New Event")
 with st.form("event_form", clear_on_submit=True):
-    subject = st.text_input("Subject")
-    short_description = st.text_area("Short description")
-    presentor = st.text_input("Presentor")
-    period = st.text_input("Period (e.g. May 2025)")
+    subject = st.text_input("Subject", value=st.session_state["subject"])
+    short_description = st.text_area("Short description", value=st.session_state["short_description"])
+    presentor = st.text_input("Presentor", value=st.session_state["presentor"])
+    period = st.text_input("Period (e.g. May 2025)", value=st.session_state["period"])
 
     submitted = st.form_submit_button("Add Event")
 
@@ -55,10 +65,16 @@ if submitted:
             ignore_index=True
         )
 
+        # Clear form state
+        st.session_state["subject"] = ""
+        st.session_state["short_description"] = ""
+        st.session_state["presentor"] = ""
+        st.session_state["period"] = ""
+
         # Display success message
         st.success("Event successfully added!")
-
-        # Rerun the app to refresh the displayed table
-        st.experimental_rerun()
     else:
         st.error("Please fill out all fields to add a new event.")
+
+# Display updated table
+st.dataframe(st.session_state.events)
