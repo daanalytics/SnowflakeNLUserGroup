@@ -4,71 +4,61 @@ import openpyxl
 from io import BytesIO
 import requests
 
-# URL van het Excelbestand in GitHub (vervang door jouw URL)
+# URL of the Excel file in GitHub
 EXCEL_URL = "https://raw.githubusercontent.com/daanalytics/SnowflakeNLUserGroup/main/SnowflakeUGEventsNL.xlsx"
 
-# Functie om het Excelbestand te laden
+# Function to load the Excel file
 @st.cache_data
 def load_events():
     response = requests.get(EXCEL_URL)
     response.raise_for_status()
     return pd.read_excel(BytesIO(response.content))
 
-# Functie om een bijgewerkt Excelbestand te genereren
-def save_to_excel(dataframe):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        dataframe.to_excel(writer, index=False, sheet_name="SnowflakeUGEventsNL")
-    return output.getvalue()
+# Streamlit app
+st.title("Event Overview")
 
-# Streamlit-app
-st.title("Event Overzicht")
+# Load existing events into session state if not already loaded
+if "events" not in st.session_state:
+    try:
+        st.session_state.events = load_events()
+    except Exception as e:
+        st.error(f"Could not load the Excel file: {e}")
+        st.session_state.events = pd.DataFrame(columns=["Subject", "Short description", "Presentor", "Period"])
 
-# Laad de huidige events
-try:
-    events = load_events()
-except Exception as e:
-    st.error(f"Could not load the Excelfile: {e}")
-    events = pd.DataFrame(columns=["Subject", "Short description", "Presentor", "Period"])
-
-# Toon het overzicht
+# Display the current list of events
 st.subheader("Planned Events")
-st.dataframe(events)
+st.dataframe(st.session_state.events)
 
-# Voeg een nieuw event toe
-st.subheader("Add a new event")
-
+# Add a new event form
+st.subheader("Add a New Event")
 with st.form("event_form", clear_on_submit=True):
     subject = st.text_input("Subject")
-    short_descripton = st.text_area("Short description")
+    short_description = st.text_area("Short description")
     presentor = st.text_input("Presentor")
     period = st.text_input("Period (e.g. May 2025)")
 
-    submitted = st.form_submit_button("Add event")
+    submitted = st.form_submit_button("Add Event")
 
-    # If the form is submitted
+# If the form is submitted
 if submitted:
-    if subject and short_descripton and presentor and period:
-        # Create a new row as a dictionary
+    if subject and short_description and presentor and period:
+        # Create a new event as a dictionary
         new_event = {
             "Subject": subject,
-            "Short description": short_descripton,
+            "Short description": short_description,
             "Presentor": presentor,
             "Period": period
         }
-        # Add the new event to the DataFrame
-        events = pd.concat([events, pd.DataFrame([new_event])], ignore_index=True)
-
-        # Save the updated DataFrame to Excel
-        excel_data = save_to_excel(events)
-
-        # Display success message and download button
-        st.success("Event successfully added!")
-        st.download_button(
-            label="Download updated Excel file",
-            data=excel_data,
-            file_name="SnowflakeUGEventsNL.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        # Add the new event to the session state DataFrame
+        st.session_state.events = pd.concat(
+            [st.session_state.events, pd.DataFrame([new_event])],
+            ignore_index=True
         )
+
+        # Display success message
+        st.success("Event successfully added!")
+
+        # Rerun the app to refresh the displayed table
+        st.experimental_rerun()
     else:
-        st.error("Fill all fields to add a new event.")
+        st.error("Please fill out all fields to add a new event.")
