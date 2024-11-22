@@ -46,27 +46,29 @@ with st.form("event_form", clear_on_submit=True):
 
     submitted = st.form_submit_button("Add event")
 
-    if submitted:
-        if subject and short_descripton and presentor and period:
-            # Voeg het nieuwe event toe aan de DataFrame
-            new_event = {
-                "Subject": subject,
-                "Short description": short_descripton,
-                "Presentor": presentor,
-                "Period": period
-            }
-            events = events.append(new_event, ignore_index=True)
+    # If the form is submitted
+if submitted:
+    if subject and short_descripton and presentor and period:
+        # Create a new row as a dictionary
+        new_event = {
+            "Subject": subject,
+            "Short description": short_descripton,
+            "Presentor": presentor,
+            "Period": period
+        }
+        # Add the new event to the DataFrame
+        events = pd.concat([events, pd.DataFrame([new_event])], ignore_index=True)
 
-            # Sla het bijgewerkte Excelbestand lokaal op
-            excel_data = save_to_excel(events)
+        # Save the updated DataFrame to Excel
+        excel_data = save_to_excel(events)
 
-            # Toon een knop om het bijgewerkte Excelbestand te downloaden
-            st.success("Event succesvol toegevoegd!")
-            st.download_button(
-                label="Download bijgewerkt Excelbestand",
-                data=excel_data,
-                file_name="SnowflakeUGEventsNL.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        else:
-            st.error("Fill all fields to add a new event.")
+        # Display success message and download button
+        st.success("Event successfully added!")
+        st.download_button(
+            label="Download updated Excel file",
+            data=excel_data,
+            file_name="SnowflakeUGEventsNL.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.error("Fill all fields to add a new event.")
